@@ -1,7 +1,33 @@
-rules     ::= rule*
-rule      ::= lhs bnfop rhs
-lhs       ::= name
-rhs       ::= names
-rhs       ::= name plus
-rhs       ::= name star
-names     ::= name+
+rules     ::= rule*                     {{
+                                            rules := []Rule{}
+                                            for _, n := range args {
+                                                rule := n.(Rule)
+                                                rules = append(rules, rule)
+                                            }
+                                            return rules
+                                        }}
+
+rule      ::= lhs bnfop rhs             {{
+                                            lhs := args[0].(string)
+                                            rhs := args[2].(Rhs)
+                                            var code string
+                                            if len(args) == 4 {
+                                                if c, ok := args[3].(string); ok {
+                                                    code = c
+                                                }
+                                            }
+                                            return Rule{Lhs: lhs, Rhs: rhs, Code: code}
+                                        }}
+lhs       ::= name                      {{ return args[0] }}
+rhs       ::= names                     {{ return Rhs{Names: args[0].([]string), Min: -1} }}
+rhs       ::= name plus                 {{ return Rhs{Names: []string{args[0].(string)}, Min: 1} }}
+rhs       ::= name star                 {{ return Rhs{Names: []string{args[0].(string)}, Min: 0} }}
+names     ::= name+                     {{
+                                            names := []string{}
+                                            for _, n := range args {
+                                                name := n.(string)
+                                                names = append(names, name)
+                                            }
+                                            return names
+                                        }}
+
