@@ -2,4 +2,6 @@ rules     ::= rule*
 rule      ::= lhs bnfop rhs
 lhs       ::= name
 rhs       ::= names
+rhs       ::= name plus
+rhs       ::= name star
 names     ::= name+
