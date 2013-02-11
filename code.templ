@@ -1,0 +1,22 @@
+package main
+import (
+    marpa "github.com/pstuifzand/go-marpa"
+)
+
+{{range .}}{{if .Code}}func _action_{{.Lhs}}(args []interface{}) {
+    {{.Code}}
+}
+{{end}}{{end}}
+
+func main() {
+    g := marpa.NewGrammar()
+    {{range .}}{{if .Rhs.Sequence}}g.AddSequence("{{.Lhs}}", "{{index .Rhs.Names 0}}", marpa.Seq{Min:{{.Rhs.Min}}}, {{.Action}});
+    {{else}}g.AddRule("{{.Lhs}}", []string{ {{range .Rhs.Names}}"{{.}}",{{end}} }, {{.Action}});
+    {{end}}{{end}}
+    g.Precompute()
+    re, err := marpa.NewRecognizer(g)
+    if err != nil {
+        return nil
+    }
+}
+

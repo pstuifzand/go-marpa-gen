@@ -6,6 +6,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"text/template"
+)
+
+var (
+	codeTemplate *template.Template = template.Must(template.ParseFiles("code.templ"))
 )
 
 type MarpaParser struct {
@@ -14,9 +19,14 @@ type MarpaParser struct {
 }
 
 type Rule struct {
-	Lhs  string
-	Rhs  Rhs
-	Code string
+	Lhs   string
+	Rhs   Rhs
+	Code  string
+	Count int
+}
+
+func (r Rule) Action() string {
+	return fmt.Sprintf("_action_%s_%d", r.Lhs, r.Count)
 }
 
 func (r Rule) String() string {
@@ -41,6 +51,10 @@ func (r Rhs) String() string {
 type Rhs struct {
 	Names []string
 	Min   int
+}
+
+func (rhs Rhs) Sequence() bool {
+	return rhs.Min >= 0
 }
 
 func ActionRules(args []interface{}) interface{} {
@@ -92,6 +106,7 @@ func NewParser() *MarpaParser {
 	g := marpa.NewGrammar()
 
 	g.StartRule("rules")
+
 	g.AddSequence("rules", "rule", marpa.Seq{Min: 1}, ActionRules)
 	g.AddRule("rule", []string{"lhs", "bnfop", "rhs"}, ActionRule)
 	g.AddRule("rule", []string{"lhs", "bnfop", "rhs", "code"}, ActionRule)
@@ -101,6 +116,7 @@ func NewParser() *MarpaParser {
 	g.AddRule("rhs", []string{"name", "star"}, ActionStar)
 	g.AddRule("code", []string{"leftcode", "innercode", "rightcode"}, ActionCode)
 	g.AddSequence("names", "name", marpa.Seq{Min: 1}, ActionNames)
+
 	g.Precompute()
 
 	re, err := marpa.NewRecognizer(g)
@@ -142,8 +158,16 @@ TOKENS:
 
 func main() {
 	p := NewParser()
+
 	rules := p.Parse(os.Stdin)
-	for _, rule := range rules {
-		fmt.Printf("%s\n", rule)
+
+	for i, _ := range rules {
+		rules[i].Count = i
+	}
+
+	err := codeTemplate.Execute(os.Stdout, rules)
+
+	if err != nil {
+		panic(err)
 	}
 }
