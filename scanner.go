@@ -19,6 +19,9 @@ const (
 	itemBnfOp
 	itemPlus
 	itemStar
+	itemLeftCode
+	itemRightCode
+	itemInnerCode
 )
 
 var (
@@ -29,6 +32,9 @@ var (
 		"bnfop",
 		"plus",
 		"star",
+		"leftcode",
+		"rightcode",
+		"innercode",
 	}
 )
 
@@ -58,6 +64,8 @@ func lexExpr(s *scanner) stateFn {
 			return lexPlus
 		} else if strings.HasPrefix(s.input[s.pos:], "*") {
 			return lexStar
+		} else if strings.HasPrefix(s.input[s.pos:], "{{") {
+			return lexLeftCode
 		}
 
 		r := s.next()
@@ -100,6 +108,35 @@ func lexPlus(s *scanner) stateFn {
 func lexStar(s *scanner) stateFn {
 	s.pos += len("*")
 	s.emit(itemStar)
+	return lexExpr
+}
+
+func lexInnerCode(s *scanner) stateFn {
+	for {
+		if strings.HasPrefix(s.input[s.pos:], "}}") {
+			s.emit(itemInnerCode)
+			return lexRightCode
+		}
+
+		r := s.next()
+		if r == eof {
+			fmt.Printf("Unterminated code\n")
+			break
+		}
+	}
+	s.emit(itemEOF)
+	return nil
+}
+
+func lexLeftCode(s *scanner) stateFn {
+	s.pos += len("{{")
+	s.emit(itemLeftCode)
+	return lexInnerCode
+}
+
+func lexRightCode(s *scanner) stateFn {
+	s.pos += len("}}")
+	s.emit(itemRightCode)
 	return lexExpr
 }
 

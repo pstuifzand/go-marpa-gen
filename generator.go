@@ -14,12 +14,13 @@ type MarpaParser struct {
 }
 
 type Rule struct {
-	Lhs string
-	Rhs Rhs
+	Lhs  string
+	Rhs  Rhs
+	Code string
 }
 
 func (r Rule) String() string {
-	return fmt.Sprintf("%s ::= %s", r.Lhs, r.Rhs)
+	return fmt.Sprintf("%s ::= %s\n\t%s", r.Lhs, r.Rhs, r.Code)
 }
 
 func (r Rhs) String() string {
@@ -53,7 +54,15 @@ func ActionRules(args []interface{}) interface{} {
 func ActionRule(args []interface{}) interface{} {
 	lhs := args[0].(string)
 	rhs := args[2].(Rhs)
-	return Rule{Lhs: lhs, Rhs: rhs}
+
+	var code string
+
+	if len(args) == 4 {
+		if c, ok := args[3].(string); ok {
+			code = c
+		}
+	}
+	return Rule{Lhs: lhs, Rhs: rhs, Code: code}
 }
 func ActionPlus(args []interface{}) interface{} {
 	return Rhs{Names: []string{args[0].(string)}, Min: 1}
@@ -66,6 +75,9 @@ func ActionLhs(args []interface{}) interface{} {
 }
 func ActionRhs(args []interface{}) interface{} {
 	return Rhs{Names: args[0].([]string), Min: -1}
+}
+func ActionCode(args []interface{}) interface{} {
+	return args[1]
 }
 func ActionNames(args []interface{}) interface{} {
 	names := []string{}
@@ -82,10 +94,12 @@ func NewParser() *MarpaParser {
 	g.StartRule("rules")
 	g.AddSequence("rules", "rule", marpa.Seq{Min: 1}, ActionRules)
 	g.AddRule("rule", []string{"lhs", "bnfop", "rhs"}, ActionRule)
+	g.AddRule("rule", []string{"lhs", "bnfop", "rhs", "code"}, ActionRule)
 	g.AddRule("lhs", []string{"name"}, ActionLhs)
 	g.AddRule("rhs", []string{"names"}, ActionRhs)
 	g.AddRule("rhs", []string{"name", "plus"}, ActionPlus)
 	g.AddRule("rhs", []string{"name", "star"}, ActionStar)
+	g.AddRule("code", []string{"leftcode", "innercode", "rightcode"}, ActionCode)
 	g.AddSequence("names", "name", marpa.Seq{Min: 1}, ActionNames)
 	g.Precompute()
 
