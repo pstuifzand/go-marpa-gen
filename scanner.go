@@ -49,7 +49,7 @@ type item struct {
 
 type scanner struct {
 	input string
-	item  item
+	//item  item
 	items chan item
 	start int
 	pos   int
@@ -144,6 +144,8 @@ func lexName(s *scanner) stateFn {
 	for {
 		r := s.next()
 		if r == eof {
+			s.backup()
+			s.emit(itemName)
 			s.emit(itemEOF)
 			return nil
 		} else if !unicode.IsLetter(r) {
