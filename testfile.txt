@@ -1,0 +1,5 @@
+rules     ::= rule*
+rule      ::= lhs bnfop rhs
+lhs       ::= name
+rhs       ::= names
+names     ::= name+
