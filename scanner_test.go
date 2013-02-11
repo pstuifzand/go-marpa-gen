@@ -15,34 +15,25 @@ func IsItem(t *testing.T, itm item, typ itemType, token string) {
 
 func TestScanner(t *testing.T) {
 	_, items := NewScanner("test")
-
 	var x item
-
 	x = <-items
 	IsItem(t, x, itemName, "test")
-
 	x = <-items
 	IsItem(t, x, itemEOF, "")
-
 }
 
 func TestScanner2(t *testing.T) {
 	_, items := NewScanner("test ::= test+")
 
 	var x item
-
 	x = <-items
 	IsItem(t, x, itemName, "test")
-
 	x = <-items
 	IsItem(t, x, itemBnfOp, "::=")
-
 	x = <-items
 	IsItem(t, x, itemName, "test")
-
 	x = <-items
 	IsItem(t, x, itemPlus, "+")
-
 	x = <-items
 	IsItem(t, x, itemEOF, "")
 }
